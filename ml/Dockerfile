@@ -1,14 +1,38 @@
-FROM python:3.11-slim
+# ═══════════════════════════════════════════════
+# ML Service — Optimized for minimal size
+# Uses CPU-only PyTorch (~800MB vs ~2.5GB full)
+# ═══════════════════════════════════════════════
+
+# ── Stage 1: Install dependencies ──
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+
+# System deps for building wheels
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc g++ && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Python deps with CPU-only PyTorch
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    -r requirements.txt
+
+# ── Stage 2: Runtime (minimal) ──
+FROM python:3.11-slim AS runtime
 
 WORKDIR /app
 
-# Install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy installed packages from builder
+COPY --from=builder /install /usr/local
 
-# Copy app
+# Only install curl for healthcheck (no gcc/build tools)
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy app code
 COPY app/ ./app/
-COPY models/ ./models/
 
 # Expose port
 EXPOSE 8001

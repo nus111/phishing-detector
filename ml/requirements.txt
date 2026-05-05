@@ -1,10 +1,17 @@
-# ML Service Dependencies
+# ML Service Dependencies (CPU-only)
+# Use PyTorch CPU index to avoid downloading CUDA (~1.5GB savings)
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 fastapi==0.111.0
 uvicorn[standard]==0.30.0
-transformers==4.41.0
-torch==2.3.0
 sentencepiece==0.2.0
 protobuf==5.27.0
 langdetect==1.0.9
 pydantic==2.7.0
 numpy==1.26.4
+
+# CPU-only PyTorch (saves ~1.5GB vs full torch)
+torch==2.3.0+cpu
+
+# Transformers — install last, depends on torch
+transformers==4.41.0
