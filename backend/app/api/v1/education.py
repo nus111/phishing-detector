@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -14,14 +15,17 @@ router = APIRouter()
 
 @router.get("")
 async def list_education_content(
-    language: str = None,
+    language: Optional[str] = Query(None),
+    content_type: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
-    """Get all education content, optionally filtered by language."""
+    """Get all education content, optionally filtered by language/type."""
     query = db.query(EducationContent).filter(EducationContent.is_active == True)
     if language:
         query = query.filter(EducationContent.language == language)
-    return query.all()
+    if content_type:
+        query = query.filter(EducationContent.content_type == content_type)
+    return query.order_by(EducationContent.created_at.desc()).all()
 
 
 @router.get("/{content_id}", response_model=EducationContentResponse)
@@ -49,22 +53,34 @@ async def submit_quiz(
     score = sum(1 for q, a in data.answers.items() if correct.get(q) == a)
     total = len(correct)
 
-    # Save progress
-    progress = UserEducationProgress(
-        id=str(uuid.uuid4()),
-        user_id=current_user["id"],
-        content_id=data.content_id,
-        completed=True,
-        score=score,
-        completed_at=datetime.utcnow(),
+    # Save progress (upsert)
+    existing = (
+        db.query(UserEducationProgress)
+        .filter(
+            UserEducationProgress.user_id == current_user["id"],
+            UserEducationProgress.content_id == data.content_id,
+        )
+        .first()
     )
-    db.add(progress)
+    if existing:
+        existing.score = max(existing.score or 0, score)
+        existing.completed = True
+        existing.completed_at = datetime.utcnow()
+    else:
+        progress = UserEducationProgress(
+            user_id=current_user["id"],
+            content_id=data.content_id,
+            completed=True,
+            score=score,
+            completed_at=datetime.utcnow(),
+        )
+        db.add(progress)
     db.commit()
 
     return QuizResult(score=score, total=total, correct_answers=correct)
 
 
-@router.get("/progress")
+@router.get("/progress/me")
 async def get_progress(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -75,8 +91,17 @@ async def get_progress(
         .filter(UserEducationProgress.user_id == current_user["id"])
         .all()
     )
+    completed = [p for p in progress if p.completed]
     return {
-        "completed": len([p for p in progress if p.completed]),
-        "total": len(progress),
-        "items": progress,
+        "completed_count": len(completed),
+        "total_attempted": len(progress),
+        "items": [
+            {
+                "content_id": p.content_id,
+                "completed": p.completed,
+                "score": p.score,
+                "completed_at": p.completed_at,
+            }
+            for p in progress
+        ],
     }

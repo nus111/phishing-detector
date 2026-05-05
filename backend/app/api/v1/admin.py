@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from datetime import datetime, timedelta
 
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -25,26 +26,66 @@ async def get_dashboard(
     """Get admin dashboard statistics."""
     total_analyses = db.query(AnalysisLog).count()
     total_users = db.query(User).count()
-    high_risk = db.query(AnalysisLog).filter(AnalysisLog.risk_level == "high").count()
-    medium_risk = db.query(AnalysisLog).filter(AnalysisLog.risk_level == "medium").count()
-    low_risk = db.query(AnalysisLog).filter(AnalysisLog.risk_level == "low").count()
+
+    # Risk level counts
+    risk_counts = dict(
+        db.query(AnalysisLog.risk_level, func.count(AnalysisLog.id))
+        .group_by(AnalysisLog.risk_level)
+        .all()
+    )
 
     # Analyses by language
-    lang_counts = (
-        db.query(AnalysisLog.input_language, func.count(AnalysisLog.id))
+    lang_counts = dict(
+        db.query(
+            func.coalesce(AnalysisLog.input_language, "unknown"),
+            func.count(AnalysisLog.id),
+        )
         .group_by(AnalysisLog.input_language)
         .all()
     )
-    analyses_by_language = {lang or "unknown": count for lang, count in lang_counts}
+
+    # Analyses by day (last 30 days)
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    daily_raw = (
+        db.query(
+            func.date(AnalysisLog.created_at).label("day"),
+            func.count(AnalysisLog.id),
+        )
+        .filter(AnalysisLog.created_at >= thirty_days_ago)
+        .group_by(func.date(AnalysisLog.created_at))
+        .order_by(func.date(AnalysisLog.created_at))
+        .all()
+    )
+    analyses_by_day = [{"date": str(d), "count": c} for d, c in daily_raw]
+
+    # Recent high-risk analyses
+    recent_high = (
+        db.query(AnalysisLog)
+        .filter(AnalysisLog.risk_level == "high")
+        .order_by(AnalysisLog.created_at.desc())
+        .limit(10)
+        .all()
+    )
+    recent_threats = [
+        {
+            "id": r.id,
+            "language": r.input_language,
+            "risk_score": r.risk_score,
+            "patterns": [p.get("type") for p in (r.detected_patterns or [])],
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in recent_high
+    ]
 
     return DashboardStats(
         total_analyses=total_analyses,
         total_users=total_users,
-        high_risk_count=high_risk,
-        medium_risk_count=medium_risk,
-        low_risk_count=low_risk,
-        analyses_by_language=analyses_by_language,
-        recent_threats=[],
+        high_risk_count=risk_counts.get("high", 0),
+        medium_risk_count=risk_counts.get("medium", 0),
+        low_risk_count=risk_counts.get("low", 0),
+        analyses_by_language=lang_counts,
+        analyses_by_day=analyses_by_day,
+        recent_threats=recent_threats,
     )
 
 
@@ -67,7 +108,19 @@ async def get_users(
     db: Session = Depends(get_db),
 ):
     """Get all users."""
-    return db.query(User).order_by(User.created_at.desc()).all()
+    users = db.query(User).order_by(User.created_at.desc()).all()
+    return [
+        {
+            "id": u.id,
+            "email": u.email,
+            "name": u.name,
+            "role": u.role,
+            "preferred_language": u.preferred_language,
+            "created_at": u.created_at,
+            "analysis_count": u.analyses.count(),
+        }
+        for u in users
+    ]
 
 
 @router.post("/retrain")
@@ -76,7 +129,10 @@ async def trigger_retrain(
 ):
     """Trigger model retraining (placeholder)."""
     # TODO: Send retrain request to ML service
-    return {"status": "retrain_queued", "message": "Model retraining has been queued."}
+    return {
+        "status": "queued",
+        "message": "Model retraining has been queued. This may take a while.",
+    }
 
 
 @router.get("/feedback")
@@ -85,4 +141,15 @@ async def get_feedback(
     db: Session = Depends(get_db),
 ):
     """Get all user feedback."""
-    return db.query(Feedback).order_by(Feedback.created_at.desc()).all()
+    feedbacks = db.query(Feedback).order_by(Feedback.created_at.desc()).all()
+    return [
+        {
+            "id": f.id,
+            "user_id": f.user_id,
+            "analysis_log_id": f.analysis_log_id,
+            "feedback_type": f.feedback_type,
+            "description": f.description,
+            "created_at": f.created_at,
+        }
+        for f in feedbacks
+    ]

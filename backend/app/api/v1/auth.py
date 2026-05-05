@@ -3,16 +3,11 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import (
-    hash_password,
-    verify_password,
-    create_access_token,
-    create_refresh_token,
-    get_current_user,
+    hash_password, verify_password,
+    create_access_token, create_refresh_token, get_current_user,
 )
 from app.models.models import User
 from app.schemas.schemas import UserRegister, UserLogin, TokenResponse, UserResponse
-
-import uuid
 
 router = APIRouter()
 
@@ -20,13 +15,11 @@ router = APIRouter()
 @router.post("/register", response_model=UserResponse, status_code=201)
 async def register(data: UserRegister, db: Session = Depends(get_db)):
     """Register a new user."""
-    # Check if email exists
     existing = db.query(User).filter(User.email == data.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = User(
-        id=str(uuid.uuid4()),
         email=data.email,
         password_hash=hash_password(data.password),
         name=data.name,
@@ -53,7 +46,10 @@ async def login(data: UserLogin, db: Session = Depends(get_db)):
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_me(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+async def get_me(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Get current authenticated user info."""
     user = db.query(User).filter(User.id == current_user["id"]).first()
     if not user:

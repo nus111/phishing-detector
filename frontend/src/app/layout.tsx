@@ -1,9 +1,11 @@
-import type { Metadata } from 'next';
-import '@/styles/globals.css';
+import type { Metadata } from "next";
+import "@/styles/globals.css";
+import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: 'Phishing Detector - AI-Powered Fraud Detection',
-  description: 'Multilingual AI-based phishing and fraud detection system',
+  title: "Phishing Detector — AI-Powered Fraud Detection",
+  description:
+    "Multilingual AI-based phishing and fraud detection system protecting vulnerable populations",
 };
 
 export default function RootLayout({
@@ -13,7 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="min-h-screen bg-gray-50">
+        <Navbar />
+        <main>{children}</main>
+      </body>
     </html>
   );
 }

@@ -1,18 +1,22 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  # ── Frontend (Next.js) ──
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+  # ── Database ──
+  db:
+    image: postgres:16-alpine
     ports:
-      - "3000:3000"
+      - "5432:5432"
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000/api/v1
-      - NEXT_PUBLIC_DEFAULT_LANGUAGE=en
-    depends_on:
-      - backend
+      POSTGRES_DB: phishing_detector
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
     restart: unless-stopped
 
   # ── Backend (FastAPI) ──
@@ -23,18 +27,21 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      - ML_SERVICE_URL=http://ml-service:8001
-      - SECRET_KEY=${SECRET_KEY}
-      - CORS_ORIGINS=["http://localhost:3000"]
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/phishing_detector"
+      ML_SERVICE_URL: "http://ml-service:8001"
+      SECRET_KEY: "dev-secret-change-in-production"
+      CORS_ORIGINS: '["http://localhost:3000"]'
     depends_on:
       db:
         condition: service_healthy
-      ml-service:
-        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
-  # ── ML Service (Model Inference) ──
+  # ── ML Service ──
   ml-service:
     build:
       context: ./ml
@@ -42,29 +49,22 @@ services:
     ports:
       - "8001:8001"
     environment:
-      - MODEL_PATH=/app/models/xlm-roberta-phishing
-    volumes:
-      - ml-models:/app/models
+      MODEL_PATH: "/app/models/xlm-roberta-phishing"
     restart: unless-stopped
 
-  # ── Database (PostgreSQL) ──
-  db:
-    image: postgres:16-alpine
+  # ── Frontend (Next.js) ──
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
-      - "5432:5432"
+      - "3000:3000"
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-phishing_detector}
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      NEXT_PUBLIC_API_URL: "http://localhost:8000/api/v1"
+      NEXT_PUBLIC_DEFAULT_LANGUAGE: "en"
+    depends_on:
+      - backend
     restart: unless-stopped
 
 volumes:
   pgdata:
-  ml-models:

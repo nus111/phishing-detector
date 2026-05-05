@@ -54,5 +54,4 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     user_id = payload.get("sub")
     if user_id is None:
         raise HTTPException(status_code=401, detail="Invalid token")
-    # TODO: Fetch user from DB
-    return {"id": user_id, "email": payload.get("email")}
+    return {"id": user_id, "email": payload.get("email"), "role": payload.get("role", "user")}

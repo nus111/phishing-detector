@@ -65,12 +65,20 @@ class AnalysisResponse(BaseModel):
 class AnalysisHistoryItem(BaseModel):
     id: str
     input_text: str
+    detected_language: str
     risk_score: float
     risk_level: str
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class PaginatedResponse(BaseModel):
+    items: List[Any]
+    total: int
+    page: int
+    limit: int
 
 
 # ── Education ──
@@ -97,6 +105,13 @@ class QuizResult(BaseModel):
     correct_answers: Dict[str, str]
 
 
+# ── Feedback ──
+class FeedbackCreate(BaseModel):
+    analysis_log_id: str
+    feedback_type: str  # "false_positive" or "false_negative"
+    description: Optional[str] = None
+
+
 # ── Admin ──
 class DashboardStats(BaseModel):
     total_analyses: int
@@ -105,4 +120,5 @@ class DashboardStats(BaseModel):
     medium_risk_count: int
     low_risk_count: int
     analyses_by_language: Dict[str, int]
+    analyses_by_day: List[Dict[str, Any]]
     recent_threats: List[Dict[str, Any]]
