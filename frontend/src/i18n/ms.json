@@ -1,0 +1,44 @@
+{
+  "common": {
+    "appName": "Pengesan Phishing",
+    "signIn": "Log Masuk",
+    "signUp": "Daftar",
+    "signOut": "Log Keluar",
+    "dashboard": "Papan Pemuka",
+    "analyze": "Analisis",
+    "education": "Pendidikan",
+    "admin": "Admin",
+    "language": "Bahasa"
+  },
+  "analyze": {
+    "title": "Penganalisis Mesej",
+    "subtitle": "Tampal atau taip mesej untuk dianalisis",
+    "placeholder": "Masukkan mesej yang mencurigakan di sini...",
+    "autoDetect": "Kesan automatik",
+    "analyzeButton": "Analisis",
+    "analyzing": "Menganalisis...",
+    "resultTitle": "Keputusan Analisis",
+    "riskScore": "Skor Risiko",
+    "detectedThreats": "Ancaman Dikesan",
+    "recommendation": "Cadangan",
+    "detectedLanguage": "Bahasa dikesan",
+    "reportIncorrect": "Laporkan kesilapan"
+  },
+  "risk": {
+    "low": "Risiko Rendah",
+    "medium": "Risiko Sederhana",
+    "high": "Risiko Tinggi"
+  },
+  "education": {
+    "title": "Pendidikan Keselamatan Siber",
+    "subtitle": "Pelajari cara mengenal pasti dan melindungi diri daripada phishing dan penipuan."
+  },
+  "dashboard": {
+    "title": "Papan Pemuka",
+    "totalAnalyses": "Jumlah Analisis",
+    "highRisk": "Risiko Tinggi",
+    "mediumRisk": "Risiko Sederhana",
+    "lowRisk": "Risiko Rendah",
+    "recentAnalyses": "Analisis Terkini"
+  }
+}

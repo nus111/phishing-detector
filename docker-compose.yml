@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # ── Frontend (Next.js) ──
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000/api/v1
+      - NEXT_PUBLIC_DEFAULT_LANGUAGE=en
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # ── Backend (FastAPI) ──
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - ML_SERVICE_URL=http://ml-service:8001
+      - SECRET_KEY=${SECRET_KEY}
+      - CORS_ORIGINS=["http://localhost:3000"]
+    depends_on:
+      db:
+        condition: service_healthy
+      ml-service:
+        condition: service_started
+    restart: unless-stopped
+
+  # ── ML Service (Model Inference) ──
+  ml-service:
+    build:
+      context: ./ml
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - MODEL_PATH=/app/models/xlm-roberta-phishing
+    volumes:
+      - ml-models:/app/models
+    restart: unless-stopped
+
+  # ── Database (PostgreSQL) ──
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-phishing_detector}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  ml-models:

@@ -1,0 +1,44 @@
+{
+  "common": {
+    "appName": "Phishing Detector",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "dashboard": "Dashboard",
+    "analyze": "Analyze",
+    "education": "Education",
+    "admin": "Admin",
+    "language": "Language"
+  },
+  "analyze": {
+    "title": "Message Analyzer",
+    "subtitle": "Paste or type a message to analyze",
+    "placeholder": "Enter suspicious message here...",
+    "autoDetect": "Auto-detect",
+    "analyzeButton": "Analyze",
+    "analyzing": "Analyzing...",
+    "resultTitle": "Analysis Result",
+    "riskScore": "Risk Score",
+    "detectedThreats": "Detected Threats",
+    "recommendation": "Recommendation",
+    "detectedLanguage": "Detected language",
+    "reportIncorrect": "Report as incorrect"
+  },
+  "risk": {
+    "low": "Low Risk",
+    "medium": "Medium Risk",
+    "high": "High Risk"
+  },
+  "education": {
+    "title": "Cybersecurity Education",
+    "subtitle": "Learn how to identify and protect yourself from phishing and fraud."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalAnalyses": "Total Analyses",
+    "highRisk": "High Risk",
+    "mediumRisk": "Medium Risk",
+    "lowRisk": "Low Risk",
+    "recentAnalyses": "Recent Analyses"
+  }
+}

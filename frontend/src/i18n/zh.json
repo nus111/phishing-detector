@@ -1,0 +1,44 @@
+{
+  "common": {
+    "appName": "钓鱼检测器",
+    "signIn": "登录",
+    "signUp": "注册",
+    "signOut": "退出",
+    "dashboard": "仪表盘",
+    "analyze": "分析",
+    "education": "安全教育",
+    "admin": "管理后台",
+    "language": "语言"
+  },
+  "analyze": {
+    "title": "消息分析器",
+    "subtitle": "粘贴或输入需要分析的消息",
+    "placeholder": "在此输入可疑消息...",
+    "autoDetect": "自动检测",
+    "analyzeButton": "开始分析",
+    "analyzing": "分析中...",
+    "resultTitle": "分析结果",
+    "riskScore": "风险评分",
+    "detectedThreats": "检测到的威胁",
+    "recommendation": "建议",
+    "detectedLanguage": "检测到的语言",
+    "reportIncorrect": "报告误判"
+  },
+  "risk": {
+    "low": "低风险",
+    "medium": "中等风险",
+    "high": "高风险"
+  },
+  "education": {
+    "title": "网络安全教育",
+    "subtitle": "学习如何识别和防范钓鱼诈骗。"
+  },
+  "dashboard": {
+    "title": "仪表盘",
+    "totalAnalyses": "总分析次数",
+    "highRisk": "高风险",
+    "mediumRisk": "中等风险",
+    "lowRisk": "低风险",
+    "recentAnalyses": "最近分析"
+  }
+}
